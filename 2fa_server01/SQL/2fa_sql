@@ -1,0 +1,17 @@
+create table users (user_id bigserial PRIMARY KEY,
+					user_name varchar(200) not null,
+					user_email varchar(200) UNIQUE not null,
+					user_password varchar (200) not null,
+					user_secret varchar(200) not null,
+					user_token varchar (200) not null,
+					user_tokenkey varchar (200) not null,
+					user_tokeniv varchar (200) not null,
+					user_check boolean not null
+					);
+
+select * from users
+
+insert into users(user_name,user_email,user_password,user_secret,user_token,user_tokenkey,user_tokeniv,user_check) values(
+'teste','teste@gmail.com','teste','teste','teste','teste','teste',false)
+
+drop table users

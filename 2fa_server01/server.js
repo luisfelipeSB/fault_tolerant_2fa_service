@@ -1,16 +1,12 @@
 const express = require ("express");
-const app = express()
+const app = express();
 const { pool } = require("./dbConfig");
-const bcrypt = require("bcrypt"); //Hash password
+const bcrypt = require("bcryptjs"); //Hash password
 const session = require("express-session");
 const flash = require("express-flash");
 const passport = require("passport");
-/*
-const crypto = require ("crypto"); // Cifrar email
-const algorithm = "aes-256-cbc"; 
-const initVector = crypto.randomBytes(16);
-const Securitykey = crypto.randomBytes(32);
-*/
+
+var CryptoJS = require("crypto-js");
 
 const authenticator = require('otplib');
 const totp = require('otplib');
@@ -29,7 +25,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(
     session({
       // Key we want to keep secret which will encrypt all of our information
-      secret: "secret", //mudar depois a scret
+      secret: "2fa", //mudar depois a scret
       // Should we resave our session variables if nothing has changes which we dont
       resave: false,
       // Save empty value if there is no vaue which we do not want to do
@@ -48,10 +44,6 @@ app.get("/", (req, res) => {
 
 app.get("/users/register", checkAuthenticated, (req, res) => {
     res.render("register");
-});
-
-app.get("/users/token", (req, res) => {
-    res.render("token");
 });
 
 app.get("/users/secret", (req, res) => {
@@ -108,23 +100,64 @@ app.post("/users/register", async (req, res) => {
                 if(results.rows.length > 0) {
                     errors.push({message:"E-mail já registado"})
                     res.render("register", { errors });
-                } else {//Não há email, pode prosseguir
-
-                    /*const cipher = crypto.createCipheriv(algorithm, Securitykey, initVector);
-                    let encryptedEmail = cipher.update(email, "utf-8", "hex");
-                    encryptedEmail += cipher.final("hex");
-                    console.log("E-mail encriptado: " + encryptedEmail);*/
+                } else {
+                //Não há email, pode prosseguir
 
                     let secret = authenticator.authenticator.generateSecret();
                     console.log(secret);
                     let token = totp.totp.generate(secret);
                     console.log(token);
-                    /*let isValid = totp.totp.check(token, secret);
-                    console.log(isValid);*/
+
+                    var JsonFormatter = {
+                        stringify: function(cipherParams) {
+                          // create json object with ciphertext
+                          var jsonObj = { ct: cipherParams.ciphertext.toString(CryptoJS.enc.Base64) };
+                      
+                          // optionally add iv or salt
+                          if (cipherParams.iv) {
+                            jsonObj.iv = cipherParams.iv.toString();
+                          }
+                      
+                          // stringify json object
+                          return JSON.stringify(jsonObj);
+                        },
+                        parse: function(jsonStr) {
+                          // parse json string
+                          var jsonObj = JSON.parse(jsonStr);
+                      
+                          // extract ciphertext from json object, and create cipher params object
+                          var cipherParams = CryptoJS.lib.CipherParams.create({
+                            ciphertext: CryptoJS.enc.Base64.parse(jsonObj.ct)
+                          });
+                      
+                          // optionally extract iv or salt
+                      
+                          if (jsonObj.iv) {
+                            cipherParams.iv = CryptoJS.enc.Hex.parse(jsonObj.iv);
+                          }
+                      
+                          return cipherParams;
+                        }
+                      };
+                      
+                      var encrypted = CryptoJS.AES.encrypt(token,"secret", {
+                        format: JsonFormatter
+                      });
+                      var decrypted = CryptoJS.AES.decrypt(encrypted,"secret", {
+                        format: JsonFormatter
+                      });
+                      decrypted.toString(CryptoJS.enc.Utf8);
+                        console.log(token);
+                          console.log( {
+                          "key": CryptoJS.enc.Base64.stringify(encrypted.key),
+                          "iv": CryptoJS.enc.Base64.stringify(encrypted.iv),
+                          "encrypted": CryptoJS.enc.Base64.stringify(encrypted.ciphertext),
+                          "decrypted": decrypted.toString(CryptoJS.enc.Utf8),
+                        });
 
                     pool.query(
-                        "insert into users (user_name, user_email, user_password, user_secret, user_token, user_check) values ($1, $2, $3, $4, $5, $6) "+
-                        "returning user_id, user_password",[name,email,hashedPassword,secret,token,false], (err,results) => {
+                        "insert into users (user_name, user_email, user_password, user_secret, user_token, user_tokenkey, user_tokeniv, user_check) values ($1, $2, $3, $4, $5, $6, $7, $8) "+
+                        "returning user_id, user_password",[name,email,hashedPassword,secret,CryptoJS.enc.Base64.stringify(encrypted.ciphertext),CryptoJS.enc.Base64.stringify(encrypted.key),CryptoJS.enc.Base64.stringify(encrypted.iv),false], (err,results) => {
                             if(err) {
                                 throw err
                             }
@@ -140,12 +173,19 @@ app.post("/users/register", async (req, res) => {
 
 });
 
+app.get("/users/logout", (req, res) => {
+    req.logOut();
+    req.flash("success_msg","Desconectou-se com sucesso");
+    res.redirect("/users/login");
+});
 
 app.post("/users/login", passport.authenticate("local", {
-    successRedirect: "/users/token",
+    successRedirect: "/users/dashboard",
     failureRedirect: "/users/login",
-    failureFlash: true
-    })
+    failureFlash: true,
+    }), (req, res) => {
+        req.flash("error",message);
+    }
 );
 
 function checkAuthenticated(req,res,next) {
@@ -169,6 +209,11 @@ app.listen(PORT, () => {
 
 //-------------------------- TOTP SERVER ------------------------------//
 
+//receber param
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
 var totpRouter = require('./routes/totpRoutes');
 
 app.use('/api/totp', totpRouter);
@@ -176,10 +221,11 @@ app.use('/api/totp', totpRouter);
 var cronJob = require("cron").CronJob;
 const axios = require('axios');
 
+
 new cronJob("*/30 * * * * *", function() {
     console.log("REFRESH TOKENS");
 
-    axios.put('http://localhost:3000/api/totp/updatetokens', {
+    axios.put('http://twofaserver01.westeurope.cloudapp.azure.com/api/totp/updatetokens', {
     todo: 'REFRESH TOKENS'
   })
   .then(res => {
