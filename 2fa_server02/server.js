@@ -1,11 +1,10 @@
 const express = require ("express");
 const app = express()
 const { pool } = require("./dbConfig");
-const bcrypt = require("bcrypt"); //Hash password
+const bcrypt = require("bcryptjs"); //Hash password
 const session = require("express-session");
 const flash = require("express-flash");
 const passport = require("passport");
-const LocalStrategy = require("passport-local").Strategy;
 
 var CryptoJS = require("crypto-js");
 
