@@ -1,6 +1,6 @@
 const LocalStrategy = require("passport-local").Strategy;
 const { pool } = require("./dbConfig");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const express = require ("express");
 const app = express()
 app.use(express.urlencoded({ extended: false }));
