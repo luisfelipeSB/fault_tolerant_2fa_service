@@ -270,10 +270,17 @@ new cronJob("*/30 * * * * *", async function() {
                 console.log("server01 running!");
                 }
                 else {
-                    
                     updateTokens();
                 }
         });
     }
 
+    process.on('uncaughtException',function(error){
+        console.log("server01 http down!");
+        updateTokens();
+      });
+    
+
 }, null, true);
+
+
