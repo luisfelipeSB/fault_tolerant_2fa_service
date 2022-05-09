@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
+import 'package:cron/cron.dart';
+import 'package:steel_crypt/steel_crypt.dart';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +21,7 @@ class MyApp extends StatelessWidget {
     final prefs = await SharedPreferences.getInstance();
     secret = prefs.getString('secret') ?? '';
     //print('secret (init): $secret');
+    //await prefs.clear();//limpar cache
     return secret;
   }
 
@@ -49,12 +53,13 @@ class SetupPage extends StatefulWidget {
 }
 
 class _SetupPageState extends State<SetupPage> {
+  static const String BASE_URI = 'http://10.0.2.2:3000';
   final _formKey = GlobalKey<FormState>();
 
   // Validate string format before contacting server
-  bool _validatesecret(str) => ((str != null || str.isNotEmpty) &&
+  /*bool _validatesecret(str) => ((str != null || str.isNotEmpty) &&
       str.length == 4 &&
-      str.contains(RegExp(r'^[a-zA-Z0-9]+$')));
+      str.contains(RegExp(r'^[a-zA-Z0-9]+$')));*/
 
   // Check if setup code is valid with server, if so, persist secret
   Future<bool> _attemptEnable2fa(str) async {
@@ -63,10 +68,12 @@ class _SetupPageState extends State<SetupPage> {
 
     // Validate with server
     final client = RetryClient(http.Client());
-    final url = Uri.parse('https://ourdomain.com/api/2fa/enable'); // TODO url
+    final url = Uri.parse('$BASE_URI/api/totp/verifysecret'); // TODO url
     try {
-      var response = await client.put(url, body: {'secret': str});
-      if (response.statusCode == 200) {}
+      var response = await client.put(url, body: {'secretcode': str});
+      if (response.statusCode == 200) {
+        log("DEU");
+      }
     } finally {
       client.close();
     }
@@ -118,12 +125,12 @@ class _SetupPageState extends State<SetupPage> {
               child: TextFormField(
                 textAlign: TextAlign.center,
                 validator: (str) {
-                  if (!_validatesecret(str)) {
+                  /*if (!_validatesecret(str)) {
                     return 'Setup code invalid';
-                  } else {
+                  } else {*/
                     _str = str;
                     return null;
-                  }
+                  //}
                 },
               ),
             ),
@@ -182,22 +189,44 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  static const int _period = 15;
-  int _totp = 1000000;
-  int _nexttotp = 0;
+  static const int _period = 30;
+  String _totp = "";
+  String _nextiv = "";
+  String _nextkey = "";
+  late String _nexttotp;
   int _counter = _period;
+  int initialperiod = 0;
+
+  final cron = Cron();
+
+  static const String BASE_URI = 'http://10.0.2.2:3000';
 
   @override
   void initState() {
     _getNewTOTP();
+    Future.delayed(const Duration(milliseconds: 1000), () {
+    if(initialperiod > 30) {
+    _counter = 60 - initialperiod;
+    } else {
+      _counter = 30 - initialperiod;
+    }
+    setState(() {
+    // Here you can write your code for open new view
+  });
+
+});
+    cron.schedule(Schedule.parse('*/30 * * * * *'), () async {
+    _getNewTOTP();
+    setState(() {});
+  });
     Timer.periodic(const Duration(seconds: 1), (_) {
       _counter--;
-      if (_counter == 5) _getNewTOTP();
+      /*if (_counter == 5) _getNewTOTP();
       if (_counter <= 0) {
         _totp = _nexttotp;
         _counter = _period;
         print('secret (home): $secret');
-      }
+      }*/
       setState(() {});
     });
     super.initState();
@@ -207,12 +236,36 @@ class _HomePageState extends State<HomePage> {
   void _getNewTOTP() async {
     final client = RetryClient(http.Client());
     final scrt = {'secret': secret};
-    final url = Uri.http('https://ourdomain.com', '/api/2fa', scrt); // TODO url
+    var entryList = scrt.entries.toList();
+
+    final url = Uri.parse('$BASE_URI/api/totp/secret/${scrt['secret']}/token'); // TODO url
 
     try {
       var response = await client.get(url);
       if (response.statusCode == 200) {
-        _nexttotp = jsonDecode(response.body)['totp'];
+        if(response.body.isNotEmpty) {
+          var encryptedData = jsonDecode(response.body)['user_token'];
+          _nextiv = jsonDecode(response.body)['user_tokeniv'];
+          _nextkey = jsonDecode(response.body)['user_tokenkey'];
+
+          //log('_nexttotp: $_nexttotp');
+          //log('_nextiv: $_nextiv');
+
+      var key = _nextkey;
+      var iv = _nextiv;
+      var cypher = AesCrypt(key: key, padding: PaddingAES.pkcs7);
+      _nexttotp = cypher.cbc.decrypt(enc: encryptedData, iv: iv);
+    _totp = _nexttotp;
+    _counter = _period;
+        //log(_nexttotp);
+        DateTime _now = DateTime.now();
+        initialperiod = _now.second;
+
+      log(cypher.cbc.decrypt(enc: encryptedData, iv: iv)); //decrypt
+
+        }
+
+      
       }
     } finally {
       client.close();

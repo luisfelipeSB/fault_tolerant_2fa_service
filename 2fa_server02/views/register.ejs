@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mini.css/3.0.1/mini-default.min.css"/>
+    <title>Registo</title>
+</head>
+<body>
+
+    <h1>Registar</h1>
+
+    <ul>
+        <% if (typeof errors != 'undefined') { %> 
+        <% errors.forEach(error => { %>
+        <li><%= error.message %></li>
+        <% }) %> <% } %>
+    </ul>
+
+    <form action="/users/register" method="POST">
+        <div>
+            <input type="text" id="name" name="name" placeholder="Nome" required>
+        </div>
+        <div>
+            <input type="email" id="email" name="email" placeholder="E-mail" required>
+        </div>
+        <div>
+            <input type="password" id="password" name="password" placeholder="Senha" required>
+        </div>
+        <div>
+            <input type="password" id="password2" name="password2" placeholder="Confirmar senha" required>
+        </div>
+        <div>
+            <input type="submit" value="Registar">
+        </div>
+        <a href="/users/login">Já possui conta? Faça login aqui</a>
+    </form>
+    
+</body>
+</html>
