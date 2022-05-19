@@ -19,9 +19,9 @@ class MyApp extends StatelessWidget {
   // Load secret from persistent storage, if any is stored
   Future<String> _loadsecret() async {
     final prefs = await SharedPreferences.getInstance();
+    //await prefs.clear();//limpar cache
     secret = prefs.getString('secret') ?? '';
     //print('secret (init): $secret');
-    //await prefs.clear();//limpar cache
     return secret;
   }
 
@@ -53,7 +53,8 @@ class SetupPage extends StatefulWidget {
 }
 
 class _SetupPageState extends State<SetupPage> {
-  static const String BASE_URI = 'http://10.0.2.2:3000';
+  static const String BASE_URI = 'https://twofaserverone.westeurope.cloudapp.azure.com';
+  static const String BASE_URI2 = 'https://twofaserverone.westeurope.cloudapp.azure.com';
   final _formKey = GlobalKey<FormState>();
 
   // Validate string format before contacting server
@@ -64,17 +65,30 @@ class _SetupPageState extends State<SetupPage> {
   // Check if setup code is valid with server, if so, persist secret
   Future<bool> _attemptEnable2fa(str) async {
     await Future.delayed(const Duration(seconds: 5));
-    bool permitted = true;
+    bool permitted = false;
 
     // Validate with server
     final client = RetryClient(http.Client());
     final url = Uri.parse('$BASE_URI/api/totp/verifysecret'); // TODO url
     try {
-      var response = await client.put(url, body: {'secretcode': str});
+      var response = await client.put(url, body: {'secretcode': str}).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
-        log("DEU");
-      }
-    } finally {
+        log("update server1");
+        permitted = true;
+      } else {
+            final url2 = Uri.parse('$BASE_URI2/api/totp/verifysecret'); // TODO url
+             var response2 = await client.put(url, body: {'secretcode': str}).timeout(const Duration(seconds: 5));
+            log("update server2");
+            permitted = true;
+      }     
+    } on TimeoutException catch (e) {
+    log('server 1 down');
+    final url2 = Uri.parse('$BASE_URI2/api/totp/verifysecret'); // TODO url
+            log("update server2");
+            permitted = true;
+  } on Error catch (e) {
+    print('Error: $e');
+  } finally {
       client.close();
     }
 
@@ -193,18 +207,20 @@ class _HomePageState extends State<HomePage> {
   String _totp = "";
   String _nextiv = "";
   String _nextkey = "";
+  String _pasttotp = "";
   late String _nexttotp;
   int _counter = _period;
   int initialperiod = 0;
 
   final cron = Cron();
 
-  static const String BASE_URI = 'http://10.0.2.2:3000';
+  static const String BASE_URI = 'https://twofaserverone.westeurope.cloudapp.azure.com';
+  static const String BASE_URI2 = 'https://twofaservertwo.westeurope.cloudapp.azure.com';
 
   @override
   void initState() {
     _getNewTOTP();
-    Future.delayed(const Duration(milliseconds: 1000), () {
+    Future.delayed(const Duration(milliseconds: 2000), () {
     if(initialperiod > 30) {
     _counter = 60 - initialperiod;
     } else {
@@ -236,14 +252,17 @@ class _HomePageState extends State<HomePage> {
   void _getNewTOTP() async {
     final client = RetryClient(http.Client());
     final scrt = {'secret': secret};
-    var entryList = scrt.entries.toList();
 
     final url = Uri.parse('$BASE_URI/api/totp/secret/${scrt['secret']}/token'); // TODO url
+    final url2 = Uri.parse('$BASE_URI2/api/totp/secret/${scrt['secret']}/token'); // TODO url
 
     try {
-      var response = await client.get(url);
+    var response = await client.get(url).timeout(const Duration(seconds: 5));
+
+
+      log(response.statusCode.toString());
+
       if (response.statusCode == 200) {
-        if(response.body.isNotEmpty) {
           var encryptedData = jsonDecode(response.body)['user_token'];
           _nextiv = jsonDecode(response.body)['user_tokeniv'];
           _nextkey = jsonDecode(response.body)['user_tokenkey'];
@@ -255,19 +274,86 @@ class _HomePageState extends State<HomePage> {
       var iv = _nextiv;
       var cypher = AesCrypt(key: key, padding: PaddingAES.pkcs7);
       _nexttotp = cypher.cbc.decrypt(enc: encryptedData, iv: iv);
-    _totp = _nexttotp;
-    _counter = _period;
+      _pasttotp = _totp;
+      if(_pasttotp == _nexttotp) {
+        _totp = "server down...";
+        _pasttotp = _totp;
+      } else {
+        _totp = _nexttotp;
+      }
+      _counter = _period;
         //log(_nexttotp);
         DateTime _now = DateTime.now();
         initialperiod = _now.second;
 
       log(cypher.cbc.decrypt(enc: encryptedData, iv: iv)); //decrypt
 
-        }
+      } else {
+      var response2 = await client.get(url2);
+      log(response2.statusCode.toString());
+      var encryptedData = jsonDecode(response2.body)['user_token'];
+      _nextiv = jsonDecode(response2.body)['user_tokeniv'];
+      _nextkey = jsonDecode(response2.body)['user_tokenkey'];
 
+      var key = _nextkey;
+      var iv = _nextiv;
+      var cypher = AesCrypt(key: key, padding: PaddingAES.pkcs7);
+      _nexttotp = cypher.cbc.decrypt(enc: encryptedData, iv: iv);
+      _pasttotp = _totp;
+      if(_pasttotp == _nexttotp) {
+        _totp = "server down...";
+        _pasttotp = _totp;
+      } else {
+        _totp = _nexttotp;
+      }
+  _counter = _period;
+
+        DateTime _now = DateTime.now();
+        initialperiod = _now.second;
+
+        log(initialperiod.toString());
+
+      log(cypher.cbc.decrypt(enc: encryptedData, iv: iv)); //decrypt
       
       }
-    } finally {
+      
+
+    } on TimeoutException catch (e) {
+    log('Server 1 down');
+    var response2 = await client.get(url2);
+      log(response2.statusCode.toString());
+      var encryptedData = jsonDecode(response2.body)['user_token'];
+      _nextiv = jsonDecode(response2.body)['user_tokeniv'];
+      _nextkey = jsonDecode(response2.body)['user_tokenkey'];
+
+      var key = _nextkey;
+      var iv = _nextiv;
+      var cypher = AesCrypt(key: key, padding: PaddingAES.pkcs7);
+      _nexttotp = cypher.cbc.decrypt(enc: encryptedData, iv: iv);
+      _pasttotp = _totp;
+      if(_pasttotp == _nexttotp) {
+        _totp = "serverdown";
+        _pasttotp = _totp;
+      } else {
+        _totp = _nexttotp;
+      }
+      _counter = _period;
+
+        DateTime _now = DateTime.now();
+        initialperiod = _now.second;
+
+         if(initialperiod > 30) {
+    _counter = 60 - initialperiod +5;
+    } else {
+      _counter = 30 - initialperiod +5;
+    }
+
+        log(initialperiod.toString());
+
+      log(cypher.cbc.decrypt(enc: encryptedData, iv: iv)); //decrypt
+  } on Error catch (e) {
+    log('Error: $e');
+  } finally {
       client.close();
     }
 
@@ -293,3 +379,6 @@ class _HomePageState extends State<HomePage> {
         ));
   }
 }
+
+
+
