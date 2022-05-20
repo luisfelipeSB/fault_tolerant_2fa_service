@@ -66,6 +66,6 @@ Executar servidor
 ```
 node server.js
 ```
-
+### Instalar Nginx
 
 
