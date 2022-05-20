@@ -1,6 +1,6 @@
 # Sistema 2FA com aplicação de telemóvel
 > Pretendemos através deste projeto implementar um serviço web simples tolerante a faltas e com suporte a autenticação de dois fatores com chaves de uso únicas temporais.
-> Live demo [_here_](https://www.twofa.westeurope.cloudapp.azure.com). <!-- If you have the project hosted somewhere, include the link here. -->
+> Demonstração: [link](https://www.twofa.westeurope.cloudapp.azure.com). <!-- If you have the project hosted somewhere, include the link here. -->
 
 ## Table of Contents
 * [General Info](#general-information)
