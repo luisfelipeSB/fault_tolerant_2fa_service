@@ -131,7 +131,7 @@ pm2 stop server.js
 pm2 logs (Show log stream)
 pm2 flush (Clear logs)
 
-# To make sure app starts when reboot
+# Quando dar reebot o servidor inicializar também
 pm2 startup ubuntu (nome da máquina)
 ```
 
