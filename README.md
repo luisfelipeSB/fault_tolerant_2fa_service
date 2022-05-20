@@ -42,10 +42,11 @@ Será necessário garantir que a comunicação entre as componentes que passarem
 
 
 ## Setup
-Criar três máquinas virtuais ubuntu 18.0:
-- 2fa-server01
-- 2fa-server02 (réplica da primeira)
-- 2fa-nginxserver
+# Criar máquinas virtuais ubuntu 18.0
+- 2fa-server01-u18
+- 2fa-server02-u18
+- 2fa-loadbalancer-u18
+# Criar máquinas virtuais ubuntu 18.0
 
 `write-your-code-here`
 
