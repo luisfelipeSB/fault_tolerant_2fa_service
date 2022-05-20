@@ -38,15 +38,15 @@ Será necessário garantir que a comunicação entre as componentes que passarem
 
 ## Setup
 ### Criar máquinas virtuais ubuntu 18.0
-- 2fa-server01-u18
-- 2fa-server02-u18
-- 2fa-loadbalancer-u18
+- 2fa_server01
+- 2fa_server02
+- 2fa_loadbalancer
 ### Instalar git e dar push ao projeto
 ```
 sudo apt-get install -y git
 git clone https://github.com/luisfelipeSB/fault_tolerant_2fa_service
 ```
-### Instalar npm packages
+### Instalar node e npm
 ```
 sudo apt-get update
 curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
@@ -62,13 +62,24 @@ Executar servidor
 node server.js
 ```
 ### Instalar e configurar Nginx
+Instalar Nginx em todas as máquinas
 ```
-sudo apt install nginx
+sudo apt-get install nginx
 ```
-Configurar Load Balancer
-vim /etc/nginx/conf.d/default.conf 
+Configurar Load Balancer na máquina 2fa_loadbalancer
+sudo nano /etc/nginx/sites-available/default
 ```
-sudo apt install nginx
+upstream www {
+server 2fa_server01 private ip weight=1;
+server 2fa_server02 private ip weight=5;
+}
+server {
+        listen 80;
+        server_name 2fa_loadbalancer ip público;
+        location / {
+          proxy_pass http://www;
+        }
+}
 ```
 
 
