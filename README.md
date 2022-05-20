@@ -42,11 +42,11 @@ Será necessário garantir que a comunicação entre as componentes que passarem
 
 
 ## Setup
-# Criar máquinas virtuais ubuntu 18.0
+### Criar máquinas virtuais ubuntu 18.0
 - 2fa-server01-u18
 - 2fa-server02-u18
 - 2fa-loadbalancer-u18
-# Criar máquinas virtuais ubuntu 18.0
+### Criar máquinas virtuais ubuntu 18.0
 
 `write-your-code-here`
 
