@@ -67,6 +67,7 @@ Instalar Nginx em todas as máquinas
 sudo apt-get install nginx
 ```
 Configurar Load Balancer na máquina 2fa_loadbalancer
+
 sudo nano /etc/nginx/sites-available/default
 ```
 upstream www {
