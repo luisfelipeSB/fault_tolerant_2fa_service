@@ -118,6 +118,7 @@ sudo certbot --nginx -d ip do servidor
 # Renovar certificado a cada 90 dias
 certbot renew --dry-run
 ```
+Não esquecer de ativar a porta 443 nos servidores para aceder ao https!
 ### Instalar PM2 nos servidores (Opcional)
 ```
 sudo npm i pm2 -g
