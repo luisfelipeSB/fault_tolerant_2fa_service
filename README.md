@@ -6,11 +6,6 @@
 * [Descrição da Solução](#descrição-da-solução)
 * [Tecnologias Usadas](#tecnologias-usadas)
 * [Setup](#setup)
-* [Usage](#usage)
-* [Project Status](#project-status)
-* [Room for Improvement](#room-for-improvement)
-* [Acknowledgements](#acknowledgements)
-* [Contact](#contact)
 <!-- * [License](#license) -->
 
 
