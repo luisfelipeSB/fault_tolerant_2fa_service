@@ -108,6 +108,16 @@ Dar restart ao Nginx
 ```
 sudo service nginx restart
 ```
+### Adicionar SSL com Let's Encrypt
+```
+sudo add-apt-repository ppa:certbot/certbot
+sudo apt-get update
+sudo apt-get install python-certbot-nginx
+sudo certbot --nginx -d ip do servidor
+
+# Renovar certificado a cada 90 dias
+certbot renew --dry-run
+```
 ### Instalar PM2 nos servidores (Opcional)
 ```
 sudo npm i pm2 -g
