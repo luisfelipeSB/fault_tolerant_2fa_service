@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/retry.dart';
 
+
 void main() => runApp(const MyApp());
 
 String secret = '';
@@ -19,7 +20,7 @@ class MyApp extends StatelessWidget {
   // Load secret from persistent storage, if any is stored
   Future<String> _loadsecret() async {
     final prefs = await SharedPreferences.getInstance();
-    //await prefs.clear();//limpar cache
+    await prefs.clear();//limpar cache
     secret = prefs.getString('secret') ?? '';
     //print('secret (init): $secret');
     return secret;
@@ -54,40 +55,40 @@ class SetupPage extends StatefulWidget {
 
 class _SetupPageState extends State<SetupPage> {
   static const String BASE_URI = 'https://twofaserverone.westeurope.cloudapp.azure.com';
-  static const String BASE_URI2 = 'https://twofaserverone.westeurope.cloudapp.azure.com';
+  static const String BASE_URI2 = 'https://twofaservertwo.westeurope.cloudapp.azure.com';
   final _formKey = GlobalKey<FormState>();
 
   // Validate string format before contacting server
-  /*bool _validatesecret(str) => ((str != null || str.isNotEmpty) &&
-      str.length == 4 &&
-      str.contains(RegExp(r'^[a-zA-Z0-9]+$')));*/
+    bool _validatesecret(str) => ((str != null || str.isNotEmpty) &&
+      str.length == 16 &&
+      str.contains(RegExp(r'^[a-zA-Z0-9]+$')));
 
   // Check if setup code is valid with server, if so, persist secret
   Future<bool> _attemptEnable2fa(str) async {
     await Future.delayed(const Duration(seconds: 5));
     bool permitted = false;
-
     // Validate with server
     final client = RetryClient(http.Client());
     final url = Uri.parse('$BASE_URI/api/totp/verifysecret'); // TODO url
+    final url2 = Uri.parse('$BASE_URI2/api/totp/verifysecret'); // TODO url
+
     try {
       var response = await client.put(url, body: {'secretcode': str}).timeout(const Duration(seconds: 5));
+
       if (response.statusCode == 200) {
-        log("update server1");
         permitted = true;
+        log("update server1");
       } else {
-            final url2 = Uri.parse('$BASE_URI2/api/totp/verifysecret'); // TODO url
-             var response2 = await client.put(url, body: {'secretcode': str}).timeout(const Duration(seconds: 5));
-            log("update server2");
-            permitted = true;
+        log("update server2");
+        var response2 = await client.put(url2, body: {'secretcode': str}).timeout(const Duration(seconds: 5));
+        permitted = true;
       }     
     } on TimeoutException catch (e) {
-    log('server 1 down');
-    final url2 = Uri.parse('$BASE_URI2/api/totp/verifysecret'); // TODO url
-            log("update server2");
-            permitted = true;
+      log("update server2 (server1 down)");
+      var response2 = await client.put(url2, body: {'secretcode': str});
+      permitted = true;
   } on Error catch (e) {
-    print('Error: $e');
+      print('Error: $e');
   } finally {
       client.close();
     }
@@ -139,12 +140,12 @@ class _SetupPageState extends State<SetupPage> {
               child: TextFormField(
                 textAlign: TextAlign.center,
                 validator: (str) {
-                  /*if (!_validatesecret(str)) {
+                  if (!_validatesecret(str)) {
                     return 'Setup code invalid';
-                  } else {*/
+                  } else {
                     _str = str;
                     return null;
-                  //}
+                  }
                 },
               ),
             ),
@@ -153,7 +154,7 @@ class _SetupPageState extends State<SetupPage> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     //print('validated locally');
                     FutureBuilder<bool>(
@@ -275,8 +276,10 @@ class _HomePageState extends State<HomePage> {
       var cypher = AesCrypt(key: key, padding: PaddingAES.pkcs7);
       _nexttotp = cypher.cbc.decrypt(enc: encryptedData, iv: iv);
       _pasttotp = _totp;
+
       if(_pasttotp == _nexttotp) {
-        _totp = "server down...";
+        _totp = "reconnecting...";
+        _counter = 999;
         _pasttotp = _totp;
       } else {
         _totp = _nexttotp;
@@ -289,6 +292,7 @@ class _HomePageState extends State<HomePage> {
       log(cypher.cbc.decrypt(enc: encryptedData, iv: iv)); //decrypt
 
       } else {
+
       var response2 = await client.get(url2);
       log(response2.statusCode.toString());
       var encryptedData = jsonDecode(response2.body)['user_token'];
@@ -300,13 +304,16 @@ class _HomePageState extends State<HomePage> {
       var cypher = AesCrypt(key: key, padding: PaddingAES.pkcs7);
       _nexttotp = cypher.cbc.decrypt(enc: encryptedData, iv: iv);
       _pasttotp = _totp;
+
       if(_pasttotp == _nexttotp) {
-        _totp = "server down...";
+        _totp = "reconnecting...";
         _pasttotp = _totp;
+        _counter = 999;
       } else {
         _totp = _nexttotp;
       }
-  _counter = _period;
+
+      _counter = _period;
 
         DateTime _now = DateTime.now();
         initialperiod = _now.second;
@@ -319,7 +326,9 @@ class _HomePageState extends State<HomePage> {
       
 
     } on TimeoutException catch (e) {
+
     log('Server 1 down');
+
     var response2 = await client.get(url2);
       log(response2.statusCode.toString());
       var encryptedData = jsonDecode(response2.body)['user_token'];
@@ -332,11 +341,13 @@ class _HomePageState extends State<HomePage> {
       _nexttotp = cypher.cbc.decrypt(enc: encryptedData, iv: iv);
       _pasttotp = _totp;
       if(_pasttotp == _nexttotp) {
-        _totp = "serverdown";
+        _totp = "reconnecting...";
         _pasttotp = _totp;
+        _counter = 999;
       } else {
         _totp = _nexttotp;
       }
+
       _counter = _period;
 
         DateTime _now = DateTime.now();
