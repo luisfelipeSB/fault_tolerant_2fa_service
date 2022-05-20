@@ -96,7 +96,7 @@ sudo nano /etc/nginx/sites-available/default
 server_name ip do servidor;
 
     location / {
-        proxy_pass http://localhost:5000; #porta em que o servidor corre
+        proxy_pass http://localhost:3000; #porta em que o servidor corre
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
