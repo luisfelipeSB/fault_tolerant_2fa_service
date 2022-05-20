@@ -47,8 +47,10 @@ Será necessário garantir que a comunicação entre as componentes que passarem
 - 2fa-server02-u18
 - 2fa-loadbalancer-u18
 ### Instalar git e dar push ao projeto
-`sudo apt-get install -y git
-git clone https://github.com/luisfelipeSB/fault_tolerant_2fa_service`
+```
+sudo apt-get install -y git
+git clone https://github.com/luisfelipeSB/fault_tolerant_2fa_service
+```
 
 
 
