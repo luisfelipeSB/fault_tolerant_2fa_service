@@ -52,6 +52,7 @@ sudo apt-get update
 curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
 sudo apt-get install nodejs
 sudo apt-get install npm
+node --version
 ```
 Instalar as dependências do projeto
 ```
@@ -60,6 +61,8 @@ npm install
 Executar servidor 
 ```
 node server.js
+# stop app
+ctrl+C
 ```
 ### Instalar e configurar Nginx
 Instalar Nginx em todas as máquinas
@@ -82,9 +85,40 @@ server {
         }
 }
 ```
-Dar restart ao Nginx sempre que alguma alteração for feita
+Dar restart ao Nginx
 ```
 sudo service nginx restart
+```
+Configurar Reverse Proxy nas máquinas dos servidores
+
+sudo nano /etc/nginx/sites-available/default
+```
+server_name yourdomain.com www.yourdomain.com;
+
+    location / {
+        proxy_pass http://localhost:5000; #whatever port your app runs on
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+```
+### Instalar Process Manager nos servidores (Opcional)
+```
+sudo npm i pm2 -g
+pm2 start app (or whatever your file name)
+
+# Other pm2 commands
+pm2 show app
+pm2 status
+pm2 restart app
+pm2 stop app
+pm2 logs (Show log stream)
+pm2 flush (Clear logs)
+
+# To make sure app starts when reboot
+pm2 startup ubuntu
 ```
 
 
