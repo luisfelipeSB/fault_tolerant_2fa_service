@@ -4,7 +4,7 @@
 
 ## Table of Contents
 * [Descrição da Solução](#descrição-da-solução)
-* [Technologies Used](#technologies-used)
+* [Tecnologias Usadas](#tecnologias-usadas)
 * [Features](#features)
 * [Screenshots](#screenshots)
 * [Setup](#setup)
@@ -29,10 +29,19 @@ Será necessário garantir que a comunicação entre as componentes que passarem
 
 
 
-## Technologies Used
-- Tech 1 - version 1.0
-- Tech 2 - version 2.0
-- Tech 3 - version 3.0
+## Tecnologias Usadas
+Azure: As máquinas virtuais serão criadas no Azure, no qual, será instalado o sistema operativo linux por ser um sistema mais leve, permitindo assim um melhor desempenho do mesmo.
+Nginx: Conhecido como um reverse proxy e load balancer para aplicações TCP e HTTP, permitirá um aumento de performance da aplicação, pois distribuirá o workload do mesmo pelas diferentes replicações do servidor.
+Node.js + Express.js: Express.js é uma web framework para node.js. Será usada para a criação da aplicação web.
+PostgreSQL: Serviço de base de dados que será utilizado para armazenar a informação dos utilizadores e as suas chaves TOTP respetivas.
+Bcrypt: Algoritmo de criptografia hash para a encriptação das passwords dos utilizadores compatível com node.js.[5]
+Flutter: Ferramenta open source, criada pela Google para desenvolver aplicações multi- plataforma. Utilizaremos para desenvolver a aplicação de autenticação do telemóvel.
+Passport.js + express-session: Passport.js é um middleware de autenticação compatível com node.js e o express-session é um middleware de sessão de cookies. Estes dois juntos formam a estratégia de autenticação utilizada pela nossa aplicação.
+CryptoJS + Steel Crypt: Ambos são bibliotecas de algoritmos criptográficos. O primeiro foi utilizado para encriptar os dados do lado do servidor e o segundo para fazer a desencriptação do lado do cliente. O algoritmo AES foi o escolhido para criptografar a maior parte da nossa base de dados.
+Otplib: Biblioteca em JavaScript para a geração e verificação de OTP. Foi utilizado o algoritmo RFC 6238 na geração de tokens e um sistema numérico de Base32 na geração de secrets do utilizador. 
+Cron: O Cron para Node é um pacote npm que permite fazer o agendamento de tarefas baseado em uma regra de tempo. Foi utilizado na geração e verificação de tokens periodicamente.
+Let’s Encrypt: É uma autoridade certificadora gratuita, automatizada e aberta que opera em prol do benefício público.
+
 
 
 ## Features
