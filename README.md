@@ -51,6 +51,17 @@ Será necessário garantir que a comunicação entre as componentes que passarem
 sudo apt-get install -y git
 git clone https://github.com/luisfelipeSB/fault_tolerant_2fa_service
 ```
+### Instalar npm packages
+```
+sudo apt-get update
+curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+sudo apt-get install nodejs
+sudo apt-get install npm
+```
+Depois de estar instalado executar nas pastas do servidor
+```
+npm install
+```
 
 
 
