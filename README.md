@@ -61,6 +61,14 @@ Executar servidor
 ```
 node server.js
 ```
-### Instalar Nginx
+### Instalar e configurar Nginx
+```
+sudo apt install nginx
+```
+Configurar Load Balancer
+vim /etc/nginx/conf.d/default.conf 
+```
+sudo apt install nginx
+```
 
 
