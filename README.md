@@ -82,5 +82,9 @@ server {
         }
 }
 ```
+Dar restart ao Nginx sempre que alguma alteração for feita
+```
+sudo service nginx restart
+```
 
 
