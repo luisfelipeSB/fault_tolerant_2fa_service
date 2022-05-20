@@ -46,9 +46,10 @@ Será necessário garantir que a comunicação entre as componentes que passarem
 - 2fa-server01-u18
 - 2fa-server02-u18
 - 2fa-loadbalancer-u18
-### Criar máquinas virtuais ubuntu 18.0
-
-`write-your-code-here`
+### Instalar git e dar push ao projeto
+`sudo apt-get install -y git
+git clone https://github.com/luisfelipeSB/fault_tolerant_2fa_service
+`
 
 
 
